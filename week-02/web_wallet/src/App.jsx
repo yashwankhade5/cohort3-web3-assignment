@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import nacl from "tweetnacl";
-import { generateMnemonic, mnemonicToSeedSync } from "bip39";
+import { generateMnemonic, mnemonicToSeed } from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import { Keypair } from "@solana/web3.js";
 
@@ -12,33 +12,49 @@ function App() {
   const [seed, setseed]=useState()
   const [accountindex,setaccountindex]=useState(0)
   const [address,setaddress]=useState([])
- function create_account() {
-   const path=`m/44'/501'/${accountindex}'/0'`
-   const derivedseed =derivePath(path,seed.toString("hex")).key;
-   const secretkey = nacl.sign.keyPair.fromSeed(derivedseed).secretKey
-   const publicKey = Keypair.fromSecretKey(secret).publicKey.tobase58()
-   setaccountindex(c=>c+1)
-setaddress([secretkey,publicKey])
-
-
- }
-
-
   useEffect(()=>{
-    setmnemonic(generateMnemonic())
-    setseed(mnemonicToSeedSync(mnemonic))
-    
+setmnemonic(generateMnemonic())
   },[])
-  
+
+  function account() {
+    const seed = mnemonicToSeed(mnemonic);
+    const path = `m/44'/501'/${accountindex}'/0'`;
+    const derivedSeed = derivePath(path, seed.toString("hex")).key;
+    const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
+    const keypair = Keypair.fromSecretKey(secret).publicKey;
+    
+    setaccountindex(accountindex + 1);
+    setaddress([...address, {secret,keypair}]);
+    
+}
+console.log(address) 
 
 
 
   return (
     <>
       <div>{mnemonic}</div>
-      <div></div>
+      <h1>{address.map((p,i)=><div key={i}>
+        <div>public : {p.keypair.toBase58()}</div>
+        <div>private : {p.secret.toString("hex")}</div>
+        
+      </div>
+      )}</h1>
+      <div onClick={account}>button</div>
     </>
   )
 }
 
 export default App
+// function () {
+//   const path=`m/44'/501'/${accountindex}'/0'`
+//   const derivedseed =derivePath(path,seed.toString("hex")).key;
+//   const naclkey = nacl.sign.keyPair.fromSeed(derivedseed).secretKey
+//   let secretkey = naclkey.slice(0,32)
+  
+//   const publicKey = Keypair.fromSeed(secretkey).publicKey.toBase58()
+//   setaccountindex(c=>c+1)
+// setaddress([...address,{secretkey,publicKey}])
+
+
+//  }
